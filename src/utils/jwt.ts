@@ -34,11 +34,13 @@ export const verifyToken = (token: string): TokenPayload | null => {
 export const setTokenCookie = (res: Response, token: string): void => {
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   const days = parseInt(expiresIn.replace('d', ''), 10) || 7;
+  const isProduction = process.env.NODE_ENV === 'production';
 
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    // Cross-site cookie (Vercel frontend -> Render backend) requires SameSite=None + Secure.
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: days * 24 * 60 * 60 * 1000, // Convert days to milliseconds
   });
 };
@@ -47,10 +49,12 @@ export const setTokenCookie = (res: Response, token: string): void => {
  * Clear JWT cookie
  */
 export const clearTokenCookie = (res: Response): void => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   res.cookie('token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     expires: new Date(0),
   });
 };
